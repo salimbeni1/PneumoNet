@@ -28,7 +28,10 @@ def get_feature_and_labels( path ):
             rate, data = wavfile.read(sound_path[i])
 
             features[i] = crop_sample( data , rate )
-            diseases[i] = split_path[-4].split('\\')[2] # this may depend on your OS ( here : Ca31\\audio\\Pn )
+            try : 
+                diseases[i] = split_path[-4].split('\\')[2] # this may depend on your OS ( here : Ca31\\audio\\Pn)
+            except : 
+                diseases[i] = split_path[-4].split('/')[2]
             positions[i] = split_path[-1].split('.')[0] # remove .wav
             controls[i] = split_path[-2][:2] # Ca - Co
             patientnbs[i] = split_path[-2][2:]
