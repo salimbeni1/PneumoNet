@@ -3,6 +3,38 @@ from scipy import signal
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 
+import glob
+
+
+
+
+def get_feature_and_labels( path ):
+    
+    sound_path = glob.glob(path+'/*.wav')
+    size = len(sound_path) # number of sounds
+    
+    features = np.zeros(size, dtype=object)
+    diseases = np.zeros(size, dtype=object)
+    positions = np.zeros(size, dtype=object)
+    controls = np.zeros(size, dtype=object)
+    frequences = np.zeros(size, dtype=object)
+    
+    for i in range(size):
+        
+        split_path = sound_path[i].split('_')
+        
+        rate, data = wavfile.read(sound_path[i])
+        
+        features[i] = crop_sample( data , rate )
+        diseases[i] = split_path[-4].split('\\')[2] # this may depend on your OS ( here : Ca31\\audio\\Pn )
+        positions[i] = split_path[-1].split('.')[0] # remove .wav
+        controls[i] = split_path[-2][:2] # Ca - Co 
+        frequences[i] = rate
+        
+    return features, diseases , positions , controls , frequences
+
+
+
 def show_spec_from_sample(sample , frequency):
     f, t, Sxx = signal.spectrogram(sample, frequency)
     plt.pcolormesh(t, f, Sxx, shading='gouraud')
