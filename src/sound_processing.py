@@ -37,8 +37,8 @@ def get_feature_and_labels( path ):
             patientnbs[i] = split_path[-2][2:]
             frequences[i] = rate
         except Exception as e:
-            print(e)
-            print("problem with -> ",sound_path[i])
+            print("error" ,e)
+            print("problemm with -> ",sound_path[i])
         
     return features, diseases , positions , controls , frequences , patientnbs
 
