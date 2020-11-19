@@ -18,6 +18,7 @@ def get_feature_and_labels( path ):
     positions = np.zeros(size, dtype=object)
     controls = np.zeros(size, dtype=object)
     frequences = np.zeros(size, dtype=object)
+    patientnbs = np.zeros(size, dtype=object) 
     
     for i in range(size):
         
@@ -29,12 +30,13 @@ def get_feature_and_labels( path ):
             features[i] = crop_sample( data , rate )
             diseases[i] = split_path[-4].split('\\')[2] # this may depend on your OS ( here : Ca31\\audio\\Pn )
             positions[i] = split_path[-1].split('.')[0] # remove .wav
-            controls[i] = split_path[-2][:2] # Ca - Co 
+            controls[i] = split_path[-2][:2] # Ca - Co
+            patientnbs[i] = split_path[-2][2:]
             frequences[i] = rate
         except : 
             print("problem with -> ",sound_path[i])
         
-    return features, diseases , positions , controls , frequences
+    return features, diseases , positions , controls , frequences , patientnbs
 
 
 
