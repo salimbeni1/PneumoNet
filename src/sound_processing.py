@@ -23,25 +23,33 @@ def get_feature_and_labels( path ):
     controls = np.zeros(size, dtype=object)
     frequences = np.zeros(size, dtype=object)
     patientnbs = np.zeros(size, dtype=object) 
+    
     for i in range(size):        
         try : 
             split_path = sound_path[i].split('_')
             
             data, rate = librosa.load(sound_path[i])
-
             #rate, data = wavfile.read(sound_path[i])
-
+            
             features[i] = crop_sample( data , rate )
+            
             try : 
                 diseases[i] = split_path[-4].split('\\')[2] # this may depend on your OS ( here : Ca31\\audio\\Pn)
-            except : 
-                diseases[i] = split_path[-4].split('/')[2]
+            except :
+                try :
+                    diseases[i] = split_path[-4].split('/')[2]
+                except :
+                    diseases[i] = 'XXX'
+                    raise Exception('unable to split ur path synthax')
+                
             positions[i] = split_path[-1].split('.')[0] # remove .wav
             controls[i] = split_path[-2][:2] # Ca - Co
             patientnbs[i] = split_path[-2][2:]
             frequences[i] = rate
-        except :
+            
+        except Exception as e:
             print("problemm with -> ",sound_path[i])
+            print("[Error] ",e)
         
     return features, diseases , positions , controls , frequences , patientnbs
 
@@ -58,6 +66,7 @@ def get_spect(path):
     sample_rate, samples = wavfile.read(path)
     frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
     return spectrogram
+
 
 def crop_sample( samples, frequency, size_crop=5, step_crop=2.5):
     '''
