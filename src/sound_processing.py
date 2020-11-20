@@ -25,7 +25,6 @@ def get_feature_and_labels( path ):
     patientnbs = np.zeros(size, dtype=object) 
     
     for i in range(size): 
-        print(i)
         try : 
             split_path = sound_path[i].split('_')
             
