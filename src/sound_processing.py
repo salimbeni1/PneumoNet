@@ -4,7 +4,7 @@ from scipy.io import wavfile
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
-
+from tqdm import tqdm
 
 
 import glob
@@ -24,7 +24,9 @@ def get_feature_and_labels( path ):
     frequences = np.zeros(size, dtype=object)
     patientnbs = np.zeros(size, dtype=object) 
     
-    for i in range(size): 
+    too_short_signal = []
+    
+    for i in tqdm(range(size)): 
         try : 
             split_path = sound_path[i].split('_')
             
@@ -47,9 +49,21 @@ def get_feature_and_labels( path ):
             patientnbs[i] = split_path[-2][2:]
             frequences[i] = rate
             
+            if(features[i].shape[0] == 0):
+                too_short_signal.append(i)
+            
         except Exception as e:
             print("problemm with -> ",sound_path[i])
             print("[Error] ",e)
+            
+    
+    # remove too short samples
+    features = np.delete(features, too_short_signal)
+    diseases = np.delete(diseases, too_short_signal)
+    positions = np.delete(positions, too_short_signal)
+    controls = np.delete(controls, too_short_signal)
+    frequences = np.delete(frequences, too_short_signal)
+    patientnbs = np.delete(patientnbs, too_short_signal)
         
     return features, diseases , positions , controls , frequences , patientnbs
 
