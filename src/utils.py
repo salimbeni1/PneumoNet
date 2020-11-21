@@ -2,6 +2,21 @@ import numpy as np
 import keras.backend as K
 import sound_processing as sp
 from keras.utils import to_categorical
+import matplotlib.pyplot as plt
+
+
+def plot_history(history , title='model accuracy / loss'):
+  plt.plot(history.history['accuracy'])
+  plt.plot(history.history['val_accuracy'])
+  plt.plot(history.history['loss'])
+  plt.plot(history.history['val_loss'])
+  plt.title(title)
+  plt.ylabel('accuracy / loss')
+  plt.xlabel('epoch')
+  plt.legend(['train_acc', 'test_acc','train_loss','test_loss'], loc='lower left')
+  plt.ylim(ymax = 1, ymin = 0)
+  plt.show()
+
 
 
 def f1(y_true, y_pred): #taken from old keras source code
