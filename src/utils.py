@@ -29,7 +29,7 @@ def f1(y_true, y_pred): #taken from old keras source code
     return f1_val
 
 
-def prepare_samples( feat , cont , posi , pnbs , shuffle=True ):
+def prepare_samples( feat , cont , posi , pnbs , shuffle=True ,extractor = lambda s : sp.features_extraction(s,22050,'stft') ):
 
   y_train = (cont == 'Ca')
   x_train = feat
@@ -42,7 +42,8 @@ def prepare_samples( feat , cont , posi , pnbs , shuffle=True ):
   for i, j, p,pos in zip(x_train, y_train, pnbs,posi):
     for subsample in i:
       y_train_big.append(j )
-      x_train_big.append(sp.features_extraction(subsample,22050,'stft') )
+      #x_train_big.append(sp.features_extraction(subsample,22050,'stft') )
+      x_train_big.append(extractor(subsample))
       train_patientnb_big.append(p)
       train_position_big.append(pos)
 
