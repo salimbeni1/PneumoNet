@@ -9,16 +9,16 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, RemoteMonitor, TensorBoa
 from tensorboardcolab import TensorBoardColab, TensorBoardColabCallback
 
 
-def get_model( dense_unit = 25 ):
+def get_model( input_shape_ , dense_unit = 25 ):
 
   model = Sequential()
 
-  model.add(Convolution2D(20, (3, 3), activation='relu', padding='same', input_shape=shape))
+  model.add(Convolution2D(20, (3, 3), activation='relu', padding='same', input_shape=input_shape_))
   model.add(BatchNormalization())
   model.add(MaxPooling2D(2, 2))
   model.add(Dropout(0.50))
 
-  model.add(Convolution2D(50, (3, 3), activation='relu', padding='same', input_shape=shape))
+  model.add(Convolution2D(50, (3, 3), activation='relu', padding='same', input_shape = input_shape_ ))
   model.add(BatchNormalization())
   model.add(MaxPooling2D(2, 2))
   model.add(Dropout(0.50))
