@@ -18,7 +18,7 @@ def get_feature_and_labels( path ):
     
     sound_path = glob.glob(path+'/*.wav')
     size = len(sound_path) # number of sounds
-    print('parsing '+size+' audio files',flush=True)
+    print('parsing '+str(size)+' audio files',flush=True)
     
     features = np.zeros(size, dtype=object)
     diseases = np.zeros(size, dtype=object)
