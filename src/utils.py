@@ -16,6 +16,7 @@ def plot_history(history , title='model accuracy / loss'):
   plt.xlabel('epoch')
   plt.legend(['train_acc', 'test_acc','train_loss','test_loss'], loc='lower left')
   plt.ylim(ymax = 1, ymin = 0)
+  plt.savefig('graph.png')
   plt.show()
 
 
