@@ -108,4 +108,42 @@ def Stack_pos(patients, features, controls, positions, patientnbs):
     return x[shuffle_indices], y[shuffle_indices]
 
 
+def load_from_npz( z_compressed_path ):
+  print("Importing from: "+z_compressed_path)
+  # export from z_compressed file
+  dict_data = np.load(z_compressed_path,allow_pickle=True)
+
+  feat, deas = dict_data['arr_0'] , dict_data['arr_1']
+  pos, cont =  dict_data['arr_2'] , dict_data['arr_3']
+  freq, pat = dict_data['arr_4'] , dict_data['arr_5']
+
+  return feat, deas, pos, cont, freq, pat
+
+
+def feature_loader( z_compressed_path , raw_data_path ):
+
+  is_in_memory = glob.glob(z_compressed_path)
+
+  if ( len(is_in_memory)==0 ):
+    print("Importing RAW from: "+raw_data_path , flush=True)
+
+    # export from raw data
+    feat, deas, pos, cont, freq, pat = sp.get_feature_and_labels( raw_data_path ) # both control and case
+    # save a z_compressed file
+    print("\nExporting .npz at: "+z_compressed_path, flush=True)
+    np.savez( z_compressed_path , feat, deas, pos, cont, freq, pat )
+    return feat, deas, pos, cont, freq, pat
+  
+  else :
+    print("Importing from: "+z_compressed_path)
+    # export from z_compressed file
+    dict_data = np.load(z_compressed_path,allow_pickle=True)
+
+    feat, deas = dict_data['arr_0'] , dict_data['arr_1']
+    pos, cont =  dict_data['arr_2'] , dict_data['arr_3']
+    freq, pat = dict_data['arr_4'] , dict_data['arr_5']
+
+    return feat, deas, pos, cont, freq, pat
+
+
 
