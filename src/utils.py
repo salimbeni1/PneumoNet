@@ -68,20 +68,25 @@ def prepare_samples( feat , cont , posi , pnbs , shuffle=True ,extractor = lambd
   return x_train, y_train, train_patientnb_big, train_position_big
 
 
-def Stack_pos(patients, features, controls, positions, patientnbs):
+def stack_pos(patients, features, controls, positions, patientnbs):
     x = []
     y = []
-    for patient in np.unique(patients):
-        indx = patientnbs == patient
+    uniq_id = np.unique(np.dstack((controls.astype('|S2'), patientnbs.astype('|S2'))), axis=1)[0, :, :]
+    for (caco, pnb) in uniq_id:
+        indx_initial = (controls.astype('|S2') == caco) & (patientnbs.astype('|S2') == pnb)
 
-        x_data, y_data, train_patientnb_big, train_position_big = prepare_samples(features[indx], controls[indx],
-                                                                              positions[indx], patientnbs[indx],
-                                                                              shuffle=False, extractor=lambda s:
-        sp.features_extraction(s, 22050, 'stft'))
+        x_data, y_data, train_patientnb_big, train_position_big = prepare_samples(features[indx_initial],
+                                                                                  controls[indx_initial],
+                                                                                  positions[indx_initial],
+                                                                                  patientnbs[indx_initial],
+                                                                                  shuffle=False, extractor=lambda s:
+            sp.features_extraction(s, 22050, 'stft'))
 
         shape = x_data[0].shape
         freq = mode(train_position_big)  # returns the position with the most crops and the number of crops
-        for i in range(0, freq[1][0]):  # for each patient we make the x number of data points where x is the frequency of the most reoccurring position
+        for i in range(0, freq[1][
+            0]):  # for each patient we make the x number of data points where x is the frequency of the most
+            # reoccurring position
             sample = np.empty(shape)  # initialize empty array
             for p in range(1, 9):  # iterate through positions
                 pos = 'P' + str(p)
@@ -92,14 +97,18 @@ def Stack_pos(patients, features, controls, positions, patientnbs):
                             sample = np.dstack([sample, x_data[indx[i]]])
                         except:  # once we run out of them take any random one
                             sample = np.dstack([sample, x_data[
-                            np.random.choice(indx)]])  # randomly take any available crops for this position and stack depthwise
+                                np.random.choice(
+                                    indx)]])  # randomly take any available crops for this position and stack depthwise
                     except:  # if position not available fill the layer with zeros
                         sample = np.dstack([sample, np.zeros(shape)])
                 else:  # if the position is the most reoccuring one
                     indx = np.argwhere(
-                    train_position_big == 'P' + str(p)).flatten()  # return the indicies of the most reocurring body position
+                        train_position_big == 'P' + str(p))  # return the indicies of the most reocurring body position
+
+                    indx = indx.flatten()
+
                     sample = np.dstack([sample, x_data[indx[i]]])  # stack that body pos
-                    y.append(controls[indx][0] == 'Ca')  # append the label of the patient
+                    y.append(controls[indx_initial][0] == 'Ca')  # append the label of the patient
             sample = np.delete(sample, 0, axis=2)  # delete the first row since it was used for initializing
             x.append(sample)  # append into train array
     x = np.array(x)
