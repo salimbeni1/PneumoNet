@@ -199,7 +199,7 @@ def _filter_banks(sample, rate):
     
     return filter_banks
 
-def features_extraction(sample, rate, ft):
+def features_extraction(sample, rate, ft , lower_limit = 150):
     '''
     Extract interesting features from audio file 
     
@@ -214,7 +214,7 @@ def features_extraction(sample, rate, ft):
     '''
     if ft == 'stft':
         stft = librosa.core.stft(y=sample)
-        stft_db = librosa.power_to_db(abs(stft)**2)[:150,:]
+        stft_db = librosa.power_to_db(abs(stft)**2)[:lower_limit,:]
         return stft_db
     
     if ft == 'mel_spect':

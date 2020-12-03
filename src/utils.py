@@ -118,7 +118,7 @@ def stack_pos(patients, features, controls, positions, patientnbs):
     y = to_categorical(np.array(y).astype(int))
     shuffle_indices = np.random.permutation(np.arange(y.shape[0]))
 
-    return x[shuffle_indices], y[shuffle_indices], patient_id
+    return x[shuffle_indices], y[shuffle_indices], patient_id[shuffle_indices]
 
 
 def load_from_npz( z_compressed_path ):
