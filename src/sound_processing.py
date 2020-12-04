@@ -230,28 +230,41 @@ def features_extraction(sample, rate, ft , lower_limit = 150):
     #    filter_banks = _filter_banks(sample,rate)
     #    return filter_banks
     
-def audio_feature_augm(sample,rate):
+    
+def augmented(features,positions, controls, nbs):
     '''
-    Data augmentation by changing loudness, pitch, adding noise or shift the audio wave 
+    Data augmentation by changing loudness, pitch, adding noise to the audio wave 
     
     Args:
         sample (numpy array): original audio data
         rate (int): sampling frequency
-        
-        
-    
+          
      Returns   
          (four 2d numpy arrays) : modified audio waves    
     '''
+    size = len(features)
+
+    noise = np.zeros(size, dtype=object)
+    loud = np.zeros(size, dtype=object)
+    pitch = np.zeros(size, dtype=object)
+  
+    #noise, loudness, pitch changing
+    noise_aug = naa.NoiseAug(color='random')
     loud_aug = naa.LoudnessAug(factor=(0.5, 2))
-    noise_aug = naa.NoiseAug()
-    pitch_aug = naa.PitchAug(sampling_rate=rate, factor=(0.75,1.25))
-    shift_aug = naa.ShiftAug(rate)
-    s = shift_aug.augment(sample, 1)
-    n = noise_aug.augment(sample, 1)
-    l = loud_aug.augment(sample, 1)
-    p = pitch_aug.augment(sample, 1)
-    return s,n,l,p
+    pitch_aug = naa.PitchAug(sampling_rate=22050, factor=(0.75,1.25))
+  
+    for i, feat in enumerate(features):
+        noise[i] = np.array(noise_aug.augment([x for x in feat], 1))
+        pitch[i] = np.array(pitch_aug.augment([x for x in feat], 1))
+        loud[i] = np.array(loud_aug.augment([x for x in feat], 1))
+
+    features_aug = np.hstack((features, noise, pitch, loud))
+    positions_aug = np.hstack(([positions]*4))
+    controls_aug = np.hstack(([controls]*4))
+    nbs_aug = np.hstack(([nbs]*4))
+
+    return features_aug, positions_aug, controls_aug, nbs_aug
+
 
 def display_all(sample, rate):
     '''
