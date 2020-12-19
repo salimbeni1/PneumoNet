@@ -5,19 +5,24 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 from tqdm import tqdm
-#import nlpaug
-#import nlpaug.augmenter.audio as naa
 
-
-
+import nlpaug
+import nlpaug.augmenter.audio as naa
 
 import glob
 
 
 
-
 def get_feature_and_labels( path ):
+    '''
+    crop raw audios from path
     
+    Args:
+        path (string): path of the folder
+    
+     Returns   
+         (features, diseases , positions , controls , frequences , patientnbs) : features of the patients crops in the given path       
+    '''
     sound_path = glob.glob(path+'/*.wav')
     size = len(sound_path) # number of sounds
     print('parsing '+str(size)+' audio files',flush=True)
@@ -74,17 +79,6 @@ def get_feature_and_labels( path ):
 
 
 
-def show_spec_from_sample(sample , frequency):
-    f, t, Sxx = signal.spectrogram(sample, frequency)
-    plt.pcolormesh(t, f, Sxx, shading='gouraud')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.show()
-    
-def get_spect(path):
-    sample_rate, samples = wavfile.read(path)
-    frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
-    return spectrogram
 
 
 def crop_sample( samples, frequency, size_crop=5, step_crop=2.5):
@@ -114,92 +108,6 @@ def crop_sample( samples, frequency, size_crop=5, step_crop=2.5):
     croped_samples = np.array(croped_samples_right + croped_samples_left)
     return croped_samples
 
-
-def normalize(X, ty):
-    '''
-    Normalization of input features 
-    
-    Args:
-        X (2d numpy array): matrix to be normalized
-        ty (char): type of normalization. It can be "mean", "minmax" or "std"
-        
-    
-     Returns   
-         (2d numpy array) : normalized matrix        
-    '''
-    if ty == 'mean':
-        return X - np.mean(X)
-    if ty == 'minmax':
-        return (X-np.min(X))/(np.max(X)-np.min(X))
-    if ty == 'std':
-        return (X-np.mean(X))/np.std(X)
-    #if ty == 'whiten':
-    #    X = X.reshape((-1, np.prod(X.shape[1:])))
-    #    X_centered = X - np.mean(X, axis=0)
-    #    Sigma = np.dot(X_centered.T, X_centered) / X_centered.shape[0]
-    #    U, Lambda, _ = np.linalg.svd(Sigma)
-    #    W = np.dot(U, np.dot(np.diag(1.0 / np.sqrt(Lambda + 1e-5)), U.T))
-    #    return np.dot(X_centered, W.T)
-
-def _filter_banks(sample, rate):
-    '''
-    Compute filter banks 
-    
-    Args:
-        sample (numpy array): original audio data
-        rate (int): sampling frequency
-        
-    
-     Returns   
-         (2d numpy array) : filter banks of the audio track       
-    '''
-    #pre-emphasis
-    emphasized_sample = np.append(sample[0], sample[1:] - 0.95 * sample[:-1])
-
-    #framing
-    frame_length, frame_step = 0.025 * rate, 0.01 * rate  # Convert from seconds to samples
-    signal_length = len(emphasized_sample)
-    frame_length = int(round(frame_length))
-    frame_step = int(round(frame_step))
-    num_frames = int(np.ceil(float(np.abs(signal_length - frame_length)) / frame_step))  # Make sure that we have at least 1 frame
-
-    pad_signal_length = num_frames * frame_step + frame_length
-    z = np.zeros((pad_signal_length - signal_length))
-    pad_signal = np.append(emphasized_sample, z) # Pad Signal to make sure that all frames have equal number of samples without truncating any samples from the original signal
-
-    indices = np.tile(np.arange(0, frame_length), (num_frames, 1)) + np.tile(np.arange(0, num_frames * frame_step, frame_step), (frame_length, 1)).T
-    frames = pad_signal[indices.astype(np.int32, copy=False)]
-
-    #hamming window
-    frames *= np.hamming(frame_length)
-
-    #fourier transform and power spectrum
-    mag_frames = np.absolute(np.fft.rfft(frames, 512))  # Magnitude of the FFT
-    pow_frames = ((1.0 / 512) * ((mag_frames) ** 2))  # Power Spectrum
-
-    #filter banks
-    low_freq_mel = 0
-    high_freq_mel = (2595 * np.log10(1 + (rate / 2) / 700))  # Convert Hz to Mel
-    mel_points = np.linspace(low_freq_mel, high_freq_mel, 40 + 2)  # Equally spaced in Mel scale
-    hz_points = (700 * (10**(mel_points / 2595) - 1))  # Convert Mel to Hz
-    bin = np.floor((512 + 1) * hz_points / rate)
-
-    fbank = np.zeros((40, int(np.floor(512 / 2 + 1))))
-    for m in range(1, 40 + 1):
-        f_m_minus = int(bin[m - 1])   # left
-        f_m = int(bin[m])             # center
-        f_m_plus = int(bin[m + 1])    # right
-
-        for k in range(f_m_minus, f_m):
-            fbank[m - 1, k] = (k - bin[m - 1]) / (bin[m] - bin[m - 1])
-        for k in range(f_m, f_m_plus):
-            fbank[m - 1, k] = (bin[m + 1] - k) / (bin[m + 1] - bin[m])
-    filter_banks = np.dot(pow_frames, fbank.T)
-    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Numerical Stability
-    filter_banks = 20 * np.log10(filter_banks)  # dB
-    filter_banks -= (np.mean(filter_banks, axis=0))
-    
-    return filter_banks
 
 def features_extraction(sample, rate, ft , high_limit=0 , lower_limit = 150):
     '''
@@ -232,86 +140,62 @@ def features_extraction(sample, rate, ft , high_limit=0 , lower_limit = 150):
     #    filter_banks = _filter_banks(sample,rate)
     #    return filter_banks
     
-    
+
 def augmented(features,positions, controls, nbs):
-    '''
+  '''
     Data augmentation by changing loudness, pitch, adding noise to the audio wave 
     
     Args:
-        sample (numpy array): original audio data
-        rate (int): sampling frequency
+        features (numpy array): audio crops
+        positions (numpy array): patient position
+        controls (numpy array): label
+        nbs (numpy array): patient number
           
      Returns   
-         (four 2d numpy arrays) : modified audio waves    
-    '''
-    size = len(features)
+         (four 2d numpy arrays) : augmented dataset    
+  '''
+  size = len(features)
 
-    noise = np.zeros(size, dtype=object)
-    loud = np.zeros(size, dtype=object)
-    pitch = np.zeros(size, dtype=object)
+  noise = np.zeros(size, dtype=object)
+  loud  = np.zeros(size, dtype=object)
+  pitch = np.zeros(size, dtype=object)
   
-    #noise, loudness, pitch changing
-    noise_aug = naa.NoiseAug(color='random')
-    loud_aug = naa.LoudnessAug(factor=(0.5, 2))
-    pitch_aug = naa.PitchAug(sampling_rate=22050, factor=(0.75,1.25))
+  #noise, loudness, pitch changing
+  noise_aug = naa.NoiseAug()
+  loud_aug = naa.LoudnessAug(factor=(0.5, 2))
+  pitch_aug = naa.PitchAug(sampling_rate=22050, factor=(0.75,1.25))
+
+  n_noise = []; n_pitch = []; n_loud = []
+  for i, feat in enumerate(features):
+    noise[i] = np.array(noise_aug.augment([x for x in feat], 1))
+    pitch[i] = np.array(pitch_aug.augment([x for x in feat], 1))
+    loud[i] = np.array(loud_aug.augment([x for x in feat], 1))
+    n_noise.append(str(nbs[i])+'b')
+    n_pitch.append(str(nbs[i])+'c')
+    n_loud.append(str(nbs[i])+'d')
+    
   
-    for i, feat in enumerate(features):
-        noise[i] = np.array(noise_aug.augment([x for x in feat], 1))
-        pitch[i] = np.array(pitch_aug.augment([x for x in feat], 1))
-        loud[i] = np.array(loud_aug.augment([x for x in feat], 1))
-
-    features_aug = np.hstack((features, noise, pitch, loud))
-    positions_aug = np.hstack(([positions]*4))
-    controls_aug = np.hstack(([controls]*4))
-    nbs_aug = np.hstack(([nbs]*4))
-
-    return features_aug, positions_aug, controls_aug, nbs_aug
+  features_aug = np.hstack((features, noise, pitch, loud))
+  positions_aug = np.hstack(([positions]*4))
+  controls_aug = np.hstack(([controls]*4))
+  #nbs_aug = np.hstack(([nbs]*4))
+  nbs_aug = np.hstack((nbs, np.array(n_noise),np.array(n_pitch),np.array(n_loud)))
 
 
-def display_all(sample, rate):
-    '''
-    Visualize all the features that we can extract 
+  return features_aug, positions_aug, controls_aug, nbs_aug
+
+
+
+# BASIC UTILS 
+
+def show_spec_from_sample(sample , frequency):
+    f, t, Sxx = signal.spectrogram(sample, frequency)
+    plt.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.show()
     
-    Args:
-        sample (numpy array): original audio data
-        rate (int): sampling frequency
-           
-    '''
-    #plot audio wave
-    f, ax = plt.subplots()
-    f.suptitle('Audio wave')
-
-    librosa.display.waveplot(sample, sr=rate, x_axis = 's')
-    ax.set_ylabel('Amplitude')
-    
-    #plot stft
-    stft_db = features_extraction(sample,rate,'stft')
-    #stft_db = normalize(stft_db, 'minmax')
-    f, axs = plt.subplots(1,2,figsize=(14,5))
-    f.suptitle('Short time Fuorier transform spectrogram')
-    axs[0].imshow(stft_db)
-    axs[0].set_xlabel('Time')
-    axs[0].set_ylabel('Freq')
-     
-    librosa.display.specshow(stft_db, sr=rate, x_axis='time',y_axis='log')
-    plt.colorbar(format='%+2.0f dB')
-    
-    #plot mfcc
-    mfcc = features_extraction(sample,rate,'mfcc')
-    f, ax = plt.subplots()
-    f.suptitle('MFCC')
-    librosa.display.specshow(mfcc, sr=rate, x_axis='time')
-
-    #plot mel spectrograms
-    mel = features_extraction(sample,rate,'mel_spect')
-    f, axs = plt.subplots(1,2,figsize=(14,5))
-    f.suptitle('Mel spectrogram')
-    axs[0].imshow(mel)
-    axs[0].set_xlabel('Time')
-    axs[0].set_ylabel('Freq')
-     
-    librosa.display.specshow(mel, sr=rate, x_axis='time',y_axis='log')
-    plt.colorbar(format='%+2.0f dB')
-
-    #mfcc = normalize(mfcc, 'minmax')
-
+def get_spect(path):
+    sample_rate, samples = wavfile.read(path)
+    frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
+    return spectrogram
